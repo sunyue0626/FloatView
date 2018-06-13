@@ -1,0 +1,18 @@
+FloatView floatView = findViewById(R.id.view_float);
+floatView.setViewContent("按钮");
+floatView.setViewSize(120, 120);
+floatView.setViewTextColor(getResources().getColor(android.R.color.white));
+floatView.setViewTextSize(TypedValue.COMPLEX_UNIT_SP, FitUtil.getFitTextSize(this, 38));
+floatView.setViewBackground(R.drawable.bg_float_view);
+
+RelativeLayout.LayoutParams lp = floatView.getViewLayoutParams();
+lp.addRule(RelativeLayout.ALIGN_PARENT_RIGHT);
+lp.addRule(RelativeLayout.CENTER_VERTICAL);
+floatView.setViewLayoutParams(lp);
+
+floatView.setOnFloatClickListener(new FloatView.OnFloatClickListener() {
+  @Override
+  public void onFloatClick() {
+    Toast.makeText(MainActivity.this, "FloatView onClick", Toast.LENGTH_SHORT).show();
+  }
+});
