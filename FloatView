@@ -1,0 +1,183 @@
+import android.content.Context;
+import android.util.AttributeSet;
+import android.view.Gravity;
+import android.view.MotionEvent;
+import android.view.animation.Animation;
+import android.view.animation.Transformation;
+import android.widget.RelativeLayout;
+import android.widget.TextView;
+
+import com.demo.util.FitUtil;
+
+public class FloatView extends RelativeLayout {
+    private Context mContext;
+    private TextView mView;
+    private boolean mDrag;
+    private boolean mMove;
+    private int mFloatWidth;
+    private int mFloatHeight;
+    private float mTouchX;
+    private float mTouchY;
+    private OnFloatClickListener mOnFloatClickListener;
+
+    public interface OnFloatClickListener {
+        void onFloatClick();
+    }
+
+    public FloatView(Context context, AttributeSet attrs) {
+        super(context, attrs);
+        mContext = context;
+        mFloatWidth = FitUtil.getFitSize(context, 160);
+        mFloatHeight = FitUtil.getFitSize(context, 160);
+        initView();
+    }
+
+    private void initView() {
+        mView = new TextView(mContext);
+        RelativeLayout.LayoutParams lp = new RelativeLayout.LayoutParams(mFloatWidth, mFloatHeight);
+        mView.setLayoutParams(lp);
+        addView(mView);
+        mView.setGravity(Gravity.CENTER);
+    }
+
+    public RelativeLayout.LayoutParams getViewLayoutParams() {
+        return (LayoutParams) mView.getLayoutParams();
+    }
+
+    public void setViewLayoutParams(RelativeLayout.LayoutParams lp) {
+        if (lp != null) {
+            mView.setLayoutParams(lp);
+        }
+    }
+
+    public void setViewSize(int width, int height) {
+        if (width > 0 && height > 0) {
+            mFloatWidth = width;
+            mFloatHeight = height;
+            RelativeLayout.LayoutParams lp = new RelativeLayout.LayoutParams(mFloatWidth, mFloatHeight);
+            mView.setLayoutParams(lp);
+        }
+    }
+
+    public void setViewContent(String content) {
+        if (content != null) {
+            mView.setText(content);
+        }
+    }
+
+    public void setViewTextSize(int unit, float size) {
+        mView.setTextSize(unit, size);
+    }
+
+    public void setViewTextColor(int color) {
+        mView.setTextColor(color);
+    }
+
+    public void setViewBackground(int resId) {
+        mView.setBackgroundResource(resId);
+    }
+
+    public void setOnFloatClickListener(OnFloatClickListener listener) {
+        mOnFloatClickListener = listener;
+    }
+
+    @Override
+    public boolean onTouchEvent(MotionEvent event) {
+        switch (event.getAction()) {
+            case MotionEvent.ACTION_DOWN:
+                mTouchX = event.getX();
+                mTouchY = event.getY();
+                float curX = mView.getX();
+                float curY = mView.getY();
+
+                if (mTouchX > curX
+                 && mTouchX < curX + mFloatWidth
+                 && mTouchY > curY
+                 && mTouchY < curY + mFloatHeight) {
+                    mDrag = true;
+                }
+                break;
+            case MotionEvent.ACTION_MOVE:
+                float x = event.getX();
+                float y = event.getY();
+
+                if (Math.abs(mTouchX - x) > 10 || Math.abs(mTouchY - y) > 10) {
+                    mMove = true;
+                }
+
+                if (x < mFloatWidth / 2) {
+                    x = mFloatWidth / 2;
+                }
+                if (x > getWidth() - mFloatWidth / 2) {
+                    x = getWidth() - mFloatWidth / 2;
+                }
+                if (y < mFloatHeight / 2) {
+                    y = mFloatHeight / 2;
+                }
+                if (y > getHeight() - mFloatHeight / 2) {
+                    y = getHeight() - mFloatHeight / 2;
+                }
+                
+                RelativeLayout.LayoutParams lp = new RelativeLayout.LayoutParams(mFloatWidth, mFloatHeight);
+                lp.topMargin = (int) y - mFloatHeight / 2;
+                lp.leftMargin = (int) x - mFloatWidth / 2;
+                mView.setLayoutParams(lp);
+                break;
+            case MotionEvent.ACTION_UP:
+                if (!mMove) {
+                    if (mOnFloatClickListener != null) {
+                        mOnFloatClickListener.onFloatClick();
+                    }
+                } else {
+                    if (mView.getX() < (getWidth() - mFloatWidth) / 2) {
+                        mView.startAnimation(new FloatLeftAnim(mView.getX()));
+                    } else {
+                        mView.startAnimation(new FloatRightAnim(mView.getX()));
+                    }
+                }
+
+                mDrag = false;
+                mMove = false;
+                break;
+            default:
+                break;
+        }
+
+        if (mDrag) {
+            return true;
+        }
+        return super.onTouchEvent(event);
+    }
+
+    private class FloatRightAnim extends Animation {
+        private float mCurX;
+
+        public FloatRightAnim(float curX) {
+            mCurX = curX;
+            setDuration(100);
+        }
+
+        @Override
+        protected void applyTransformation(float interpolatedTime, Transformation t) {
+            RelativeLayout.LayoutParams lpImage = (RelativeLayout.LayoutParams) mView.getLayoutParams();
+            lpImage.leftMargin = (int) (mCurX + (getWidth() - mFloatWidth - mCurX) * interpolatedTime);
+            mView.setLayoutParams(lpImage);
+        }
+    }
+
+    private class FloatLeftAnim extends Animation {
+        private float mCurX;
+
+        public FloatLeftAnim(float curX) {
+            mCurX = curX;
+            setDuration(100);
+        }
+
+        @Override
+        protected void applyTransformation(float interpolatedTime, Transformation t) {
+            RelativeLayout.LayoutParams lpImage = (RelativeLayout.LayoutParams) mView.getLayoutParams();
+            lpImage.leftMargin = (int) (mCurX * (1 - interpolatedTime));
+            mView.setLayoutParams(lpImage);
+        }
+    }
+}
